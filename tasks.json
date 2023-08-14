@@ -1,0 +1,45 @@
+[
+    {
+      "id": 1,
+      "title": "Upgrade Network Infrastructure",
+      "description": "Upgrade the network infrastructure to improve performance and reliability.",
+      "completed": false,
+      "created_at": "2023-06-10T09:00:00Z",
+      "updated_at": "2023-06-10T09:00:00Z",
+      "items": [
+        "Evaluate current network equipment",
+        "Procure and install new routers and switches",
+        "Configure network devices",
+        "Perform network testing and optimization"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Implement 5G Technology",
+      "description": "Plan and deploy 5G technology to provide faster and more advanced mobile services.",
+      "completed": false,
+      "created_at": "2023-06-10T10:30:00Z",
+      "updated_at": "2023-06-10T10:30:00Z",
+      "items": [
+        "Develop a 5G deployment strategy",
+        "Upgrade base stations and antennas",
+        "Test 5G network coverage and performance",
+        "Launch 5G services for customers"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Improve Customer Support System",
+      "description": "Enhance the customer support system to provide better assistance and resolution to customer issues.",
+      "completed": true,
+      "created_at": "2023-06-09T14:15:00Z",
+      "updated_at": "2023-06-10T11:45:00Z",
+      "items": [
+        "Review existing support processes",
+        "Implement a ticketing system",
+        "Train support staff on new system",
+        "Monitor and measure customer satisfaction"
+      ]
+    }
+  ]
+  
