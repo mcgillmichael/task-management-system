@@ -1,3 +1,22 @@
+// Package classification Task Management System API.
+//
+// This is a sample Task Management System server.
+// It provides operations to manage tasks, assign users, and manage comments.
+//
+//	Schemes: http
+//	BasePath: /
+//	Version: 1.0.0
+//	License: MIT http://opensource.org/licenses/MIT
+//	Host: localhost:4000
+//	Contact: Support Team <support@taskmanagementsystem.com>
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+// swagger:meta
 package main
 
 // imports necessary packages from the standard library

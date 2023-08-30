@@ -20,6 +20,7 @@ type Task struct {
 type TaskDto struct {
 	DB *sql.DB
 }
+
 type TaskComment struct {
 	ID        int       `json:"id"`
 	TaskID    int       `json:"task_id"`

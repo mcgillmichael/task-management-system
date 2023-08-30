@@ -344,7 +344,7 @@ func (app *application) createTaskCommentsHandler(w http.ResponseWriter, r *http
 
 }
 
-func (app *application) getTaskCommentsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (app *application) getAllTaskCommentsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Parse the task ID from the URL parameters.
 	taskID, err := strconv.Atoi(ps.ByName("taskID"))
 	if err != nil || taskID == 0 {

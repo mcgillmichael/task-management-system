@@ -1,0 +1,49 @@
+basePath: /
+consumes:
+    - application/json
+definitions:
+    healthCheckResponse:
+        properties:
+            environment:
+                type: string
+                x-go-name: Environment
+            status:
+                type: string
+                x-go-name: Status
+            version:
+                type: string
+                x-go-name: Version
+        type: object
+        x-go-name: HealthCheckResponse
+        x-go-package: tms.zinkworks.com/tms/api
+host: localhost:4000
+info:
+    contact:
+        email: support@taskmanagementsystem.com
+        name: Support Team
+    description: |-
+        This is a sample Task Management System server.
+        It provides operations to manage tasks, assign users, and manage comments.
+    license:
+        name: MIT
+        url: http://opensource.org/licenses/MIT
+    title: Task Management System API.
+    version: 1.0.0
+paths:
+    /healthcheck:
+        get:
+            description: Checks if the application is running.
+            operationId: healthcheckEndpoint
+            responses:
+                "200":
+                    description: healthCheckResponse
+                    schema:
+                        $ref: '#/definitions/healthCheckResponse'
+            summary: Health check endpoint.
+            tags:
+                - healthcheck
+produces:
+    - application/json
+schemes:
+    - http
+swagger: "2.0"
