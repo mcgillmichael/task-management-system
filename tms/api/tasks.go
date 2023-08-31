@@ -105,6 +105,19 @@ func (app *application) showTaskHandler(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// swagger:route POST /tasks tasks createTaskEndpoint
+// Create a new task.
+// Inserts a new task and its items into the database.
+// Consumes:
+// - application/json
+// Produces:
+// - application/json
+// Schemes: http, https
+// responses:
+//
+//	201: taskCreatedResponse
+//	400: badRequestError
+//	500: internalServerError
 func (app *application) createTaskHandler2(w http.ResponseWriter, r *http.Request) {
 
 	var createTask model.Task
@@ -145,6 +158,16 @@ func (app *application) createTaskHandler2(w http.ResponseWriter, r *http.Reques
 
 }
 
+// swagger:route GET /tasks tasks getAllTasksEndpoint
+// Get all tasks.
+// Fetches all tasks from the database.
+// Produces:
+// - application/json
+// Schemes: http, https
+// responses:
+//
+//	200: allTasksResponse
+//	500: internalServerError
 func (app *application) getAllTasksHandler(w http.ResponseWriter, r *http.Request) {
 	taskDto := model.TaskDto{DB: app.db}
 
@@ -226,6 +249,25 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// swagger:route GET /tasks/{id} tasks getTaskEndpoint
+// Get a task by ID.
+// Fetches a task by its ID from the database.
+// Produces:
+// - application/json
+// Schemes: http, https
+// Parameters:
+//   - name: id
+//     in: path
+//     description: Task ID to get.
+//     required: true
+//     type: integer
+//
+// responses:
+//
+//	200: taskResponse
+//	400: invalidTaskIdError
+//	404: notFoundError
+//	500: internalServerError
 func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Parse the task ID from the URL parameters.
 	taskID, err := strconv.Atoi(ps.ByName("id"))
@@ -315,6 +357,19 @@ func (app *application) getTasksAssignedToUserHandler(w http.ResponseWriter, r *
 
 }
 
+// swagger:route POST /comments tasks createTaskCommentsEndpoint
+// Create a task comment.
+// Inserts a new task comment into the database.
+// Consumes:
+// - application/json
+// Produces:
+// - application/json
+// Schemes: http, https
+// responses:
+//
+//	201: taskCommentCreatedResponse
+//	400: badRequestError
+//	500: internalServerError
 func (app *application) createTaskCommentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var createTaskComment model.TaskComment

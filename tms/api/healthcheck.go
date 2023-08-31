@@ -4,13 +4,6 @@ import (
 	"net/http"
 )
 
-// swagger:model healthCheckResponse
-type HealthCheckResponse struct {
-	Status      string `json:"status" example:"available"`
-	Environment string `json:"environment" example:"development"`
-	Version     string `json:"version" example:"1.0.0"`
-}
-
 // swagger:route GET /healthcheck healthcheck healthcheckEndpoint
 // Health check endpoint.
 // Checks if the application is running.

@@ -2,20 +2,64 @@ basePath: /
 consumes:
     - application/json
 definitions:
-    healthCheckResponse:
+    Task:
         properties:
-            environment:
+            assigned_user_id:
+                format: int64
+                type: integer
+                x-go-name: AssignedUserID
+            comments:
+                items:
+                    type: string
+                type: array
+                x-go-name: Comments
+            completed:
+                type: boolean
+                x-go-name: Completed
+            created_at:
+                format: date-time
                 type: string
-                x-go-name: Environment
-            status:
+                x-go-name: CreatedAt
+            description:
                 type: string
-                x-go-name: Status
-            version:
+                x-go-name: Description
+            id:
+                format: int64
+                type: integer
+                x-go-name: ID
+            items:
+                items:
+                    type: string
+                type: array
+                x-go-name: Items
+            title:
                 type: string
-                x-go-name: Version
+                x-go-name: Title
+            updated_at:
+                format: date-time
+                type: string
+                x-go-name: UpdatedAt
         type: object
-        x-go-name: HealthCheckResponse
-        x-go-package: tms.zinkworks.com/tms/api
+        x-go-package: tms.zinkworks.com/model
+    TaskComment:
+        properties:
+            comment:
+                type: string
+                x-go-name: Comment
+            created_at:
+                format: date-time
+                type: string
+                x-go-name: CreatedAt
+            id:
+                format: int64
+                type: integer
+                x-go-name: ID
+            task_id:
+                format: int64
+                type: integer
+                x-go-name: TaskID
+        type: object
+        x-go-package: tms.zinkworks.com/model
 host: localhost:4000
 info:
     contact:
@@ -30,20 +74,145 @@ info:
     title: Task Management System API.
     version: 1.0.0
 paths:
+    /comments:
+        post:
+            consumes:
+                - application/json
+            description: Inserts a new task comment into the database.
+            operationId: createTaskCommentsEndpoint
+            produces:
+                - application/json
+            responses:
+                "201":
+                    $ref: '#/responses/taskCommentCreatedResponse'
+                "400":
+                    $ref: '#/responses/badRequestError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Create a task comment.
+            tags:
+                - tasks
     /healthcheck:
         get:
             description: Checks if the application is running.
             operationId: healthcheckEndpoint
             responses:
                 "200":
-                    description: healthCheckResponse
-                    schema:
-                        $ref: '#/definitions/healthCheckResponse'
+                    $ref: '#/responses/healthCheckResponse'
             summary: Health check endpoint.
             tags:
                 - healthcheck
+    /tasks:
+        get:
+            description: Fetches all tasks from the database.
+            operationId: getAllTasksEndpoint
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/allTasksResponse'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Get all tasks.
+            tags:
+                - tasks
+        post:
+            consumes:
+                - application/json
+            description: Inserts a new task and its items into the database.
+            operationId: createTaskEndpoint
+            produces:
+                - application/json
+            responses:
+                "201":
+                    $ref: '#/responses/taskCreatedResponse'
+                "400":
+                    $ref: '#/responses/badRequestError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Create a new task.
+            tags:
+                - tasks
+    /tasks/{id}:
+        get:
+            description: Fetches a task by its ID from the database.
+            operationId: getTaskEndpoint
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/taskResponse'
+                "400":
+                    $ref: '#/responses/invalidTaskIdError'
+                "404":
+                    $ref: '#/responses/notFoundError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Get a task by ID.
+            tags:
+                - tasks
 produces:
     - application/json
+responses:
+    allTasksResponse:
+        description: Response for getting all tasks
+        schema:
+            items:
+                $ref: '#/definitions/Task'
+            type: array
+    badRequestError:
+        description: Bad request due to client-side error, e.g., invalid request body.
+        headers:
+            error:
+                type: string
+    healthCheckResponse:
+        description: Health check response indicating the status and details of the service.
+        headers:
+            environment:
+                type: string
+            status:
+                type: string
+            version:
+                type: string
+    internalServerError:
+        description: Server encountered a problem.
+        headers:
+            error:
+                type: string
+    invalidTaskIdError:
+        description: Bad request due to client-side error, e.g., invalid task ID.
+        headers:
+            error:
+                type: string
+    notFoundError:
+        description: Indicates the task was not found.
+        headers:
+            error:
+                type: string
+    taskCommentCreatedResponse:
+        description: Response for a successfully created task comment.
+        schema:
+            $ref: '#/definitions/TaskComment'
+    taskCreatedResponse:
+        description: Response for successfully created task.
+        schema:
+            $ref: '#/definitions/Task'
+    taskResponse:
+        description: Response for successfully retrieved task by ID.
+        schema:
+            $ref: '#/definitions/Task'
 schemes:
     - http
 swagger: "2.0"
