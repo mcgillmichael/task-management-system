@@ -95,6 +95,33 @@ paths:
             summary: Create a task comment.
             tags:
                 - tasks
+    /comments/{taskID}:
+        get:
+            description: Returns a list of comments for a task based on its ID.
+            operationId: getTaskCommentsEndpoint
+            parameters:
+                - description: The ID of the task whose comments are to be retrieved.
+                  format: int64
+                  in: path
+                  name: taskID
+                  required: true
+                  type: integer
+                  x-go-name: TaskID
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/allCommentsResponse'
+                "400":
+                    $ref: '#/responses/invalidIdError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Get comments for a specific task.
+            tags:
+                - tasks
     /healthcheck:
         get:
             description: Checks if the application is running.
@@ -143,9 +170,43 @@ paths:
             tags:
                 - tasks
     /tasks/{id}:
+        delete:
+            description: Removes a task from the database based on its ID.
+            operationId: deleteTaskEndpoint
+            parameters:
+                - description: The ID of the task to retrieve.
+                  format: int64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/successfullyDeletedResponse'
+                "400":
+                    $ref: '#/responses/invalidTaskIdError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Delete a task by ID.
+            tags:
+                - tasks
         get:
             description: Fetches a task by its ID from the database.
             operationId: getTaskEndpoint
+            parameters:
+                - description: The ID of the task to retrieve.
+                  format: int64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             produces:
                 - application/json
             responses:
@@ -163,9 +224,112 @@ paths:
             summary: Get a task by ID.
             tags:
                 - tasks
+        put:
+            description: Updates a task by its ID with the details provided in the request body.
+            operationId: updateTaskEndpoint
+            parameters:
+                - description: The ID of the task to update.
+                  format: int64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+                - description: The details of the task to update.
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/Task'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/taskResponse'
+                "400":
+                    $ref: '#/responses/badRequestError'
+                "404":
+                    $ref: '#/responses/notFoundError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Update an existing task.
+            tags:
+                - tasks
+    /tasks/{taskID}/assign/{userID}:
+        patch:
+            description: Assigns a user to a specific task based on task and user IDs.
+            operationId: assignTaskEndpoint
+            parameters:
+                - description: The ID of the task to be assigned.
+                  format: int64
+                  in: path
+                  name: taskID
+                  required: true
+                  type: integer
+                  x-go-name: TaskID
+                - description: The ID of the user to which the task will be assigned.
+                  format: int64
+                  in: path
+                  name: userID
+                  required: true
+                  type: integer
+                  x-go-name: UserID
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/taskResponse'
+                "400":
+                    $ref: '#/responses/invalidIdError'
+                "404":
+                    $ref: '#/responses/notFoundError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Assign a user to a task.
+            tags:
+                - tasks
+    /users/{userID}/tasks/assigned:
+        get:
+            description: Returns a list of tasks assigned to a user based on their ID.
+            operationId: getUserAssignedTasksEndpoint
+            parameters:
+                - description: The ID of the user whose assigned tasks are to be retrieved.
+                  format: int64
+                  in: path
+                  name: userID
+                  required: true
+                  type: integer
+                  x-go-name: UserID
+            produces:
+                - application/json
+            responses:
+                "200":
+                    $ref: '#/responses/allTasksResponse'
+                "400":
+                    $ref: '#/responses/invalidIdError'
+                "500":
+                    $ref: '#/responses/internalServerError'
+            schemes:
+                - http
+                - https
+            summary: Get tasks assigned to a specific user.
+            tags:
+                - tasks
 produces:
     - application/json
 responses:
+    allCommentsResponse:
+        description: Response for getting all comments for a task
+        schema:
+            items:
+                $ref: '#/definitions/TaskComment'
+            type: array
     allTasksResponse:
         description: Response for getting all tasks
         schema:
@@ -191,6 +355,11 @@ responses:
         headers:
             error:
                 type: string
+    invalidIdError:
+        description: Invalid ID error due to client-side error, specifically when trying to assign a user to a task.
+        headers:
+            error:
+                type: string
     invalidTaskIdError:
         description: Bad request due to client-side error, e.g., invalid task ID.
         headers:
@@ -200,6 +369,11 @@ responses:
         description: Indicates the task was not found.
         headers:
             error:
+                type: string
+    successfullyDeletedResponse:
+        description: Response indicating successful deletion.
+        headers:
+            message:
                 type: string
     taskCommentCreatedResponse:
         description: Response for a successfully created task comment.

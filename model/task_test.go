@@ -2,6 +2,8 @@ package model
 
 import (
 	"database/sql"
+	"encoding/json"
+	"net/http"
 	"testing"
 	"time"
 
@@ -296,4 +298,25 @@ func TestGetAllTaskCommentsByTaskID_SuccessfulGet(t *testing.T) {
 	// Ensure all mock expectations were met.
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
+}
+
+// Integration Tests
+func TestHealthcheckHandler(t *testing.T) {
+	resp, err := http.Get("http://localhost:4000/healthcheck")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Decode the response body
+	var data map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check for the 'status' key-value
+	if data["status"] != "available" {
+		t.Errorf("want status to be 'available'; got %s", data["status"])
+	}
 }

@@ -59,3 +59,22 @@ type BadRequestError struct {
 type InternalServerError struct {
 	Error string `json:"error"`
 }
+
+// Response indicating successful deletion.
+// swagger:response successfullyDeletedResponse
+type SuccessfullyDeletedResponse struct {
+	Message string `json:"message"`
+}
+
+// Invalid ID error due to client-side error, specifically when trying to assign a user to a task.
+// swagger:response invalidIdError
+type InvalidIdErrorResponse struct {
+	Error string `json:"error" example:"Error assigning user to task"`
+}
+
+// Response for getting all comments for a task
+// swagger:response allCommentsResponse
+type AllCommentsResponse struct {
+	// in: body
+	Body []TaskComment `json:"body"`
+}

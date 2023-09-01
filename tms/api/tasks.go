@@ -183,6 +183,18 @@ func (app *application) getAllTasksHandler(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(tasks)
 }
 
+// swagger:route DELETE /tasks/{id} tasks deleteTaskEndpoint
+// Delete a task by ID.
+// Removes a task from the database based on its ID.
+// Produces:
+// - application/json
+// Schemes: http, https
+//
+// Responses:
+//
+//	200: successfullyDeletedResponse
+//	400: invalidTaskIdError
+//	500: internalServerError
 func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Parse the task ID from the URL parameters.
 	taskID, err := strconv.Atoi(ps.ByName("id"))
@@ -203,6 +215,18 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
+// swagger:route PUT /tasks/{id} tasks updateTaskEndpoint
+// Update an existing task.
+// Updates a task by its ID with the details provided in the request body.
+// Produces:
+// - application/json
+// Schemes: http, https
+// Responses:
+//
+//	200: taskResponse
+//	400: badRequestError
+//	404: notFoundError
+//	500: internalServerError
 func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	taskDto := model.TaskDto{DB: app.db}
@@ -255,12 +279,6 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 // Produces:
 // - application/json
 // Schemes: http, https
-// Parameters:
-//   - name: id
-//     in: path
-//     description: Task ID to get.
-//     required: true
-//     type: integer
 //
 // responses:
 //
@@ -294,6 +312,19 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request, p
 	json.NewEncoder(w).Encode(task)
 }
 
+// swagger:route PATCH /tasks/{taskID}/assign/{userID} tasks assignTaskEndpoint
+// Assign a user to a task.
+// Assigns a user to a specific task based on task and user IDs.
+// Produces:
+// - application/json
+// Schemes: http, https
+//
+// Responses:
+//
+//	200: taskResponse
+//	400: invalidIdError
+//	404: notFoundError
+//	500: internalServerError
 func (app *application) assignTaskHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	taskDto := model.TaskDto{DB: app.db}
@@ -334,6 +365,17 @@ func (app *application) assignTaskHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// swagger:route GET /users/{userID}/tasks/assigned tasks getUserAssignedTasksEndpoint
+// Get tasks assigned to a specific user.
+// Returns a list of tasks assigned to a user based on their ID.
+// Produces:
+// - application/json
+// Schemes: http, https
+// Responses:
+//
+//	200: allTasksResponse
+//	400: invalidIdError
+//	500: internalServerError
 func (app *application) getTasksAssignedToUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Parse the user ID from the URL parameters.
 	userID, err := strconv.Atoi(ps.ByName("userID"))
@@ -399,6 +441,17 @@ func (app *application) createTaskCommentsHandler(w http.ResponseWriter, r *http
 
 }
 
+// swagger:route GET /comments/{taskID} tasks getTaskCommentsEndpoint
+// Get comments for a specific task.
+// Returns a list of comments for a task based on its ID.
+// Produces:
+// - application/json
+// Schemes: http, https
+// Responses:
+//
+//	200: allCommentsResponse
+//	400: invalidIdError
+//	500: internalServerError
 func (app *application) getAllTaskCommentsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Parse the task ID from the URL parameters.
 	taskID, err := strconv.Atoi(ps.ByName("taskID"))
