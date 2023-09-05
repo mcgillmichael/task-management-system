@@ -1,9 +1,12 @@
 package model
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -318,5 +321,276 @@ func TestHealthcheckHandler(t *testing.T) {
 	// Check for the 'status' key-value
 	if data["status"] != "available" {
 		t.Errorf("want status to be 'available'; got %s", data["status"])
+	}
+}
+
+func TestCreateTaskHandler2(t *testing.T) {
+	// Define the task to be created
+	taskData := `{
+        "title": "Test Task",
+        "description": "This is a test task",
+        "items": [
+			"This is a test item",
+			"This is a test item 2"
+        ]
+    }`
+
+	// Create a new HTTP request with the task data
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:4000/tasks", bytes.NewBufferString(taskData))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Perform the HTTP request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the status code is 201 Created
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected status code 201; got %d", resp.StatusCode)
+	}
+
+	// Decode the response body
+	var taskResponse Task
+	err = json.NewDecoder(resp.Body).Decode(&taskResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Further assertions can be made on the taskResponse if needed
+	if taskResponse.Title != "Test Task" {
+		t.Errorf("Expected task title 'Test Task'; got %s", taskResponse.Title)
+	}
+}
+
+func TestGetAllTasksHandler(t *testing.T) {
+	resp, err := http.Get("http://localhost:4000/tasks")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for status code 200 OK.
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status 200, got %v", resp.StatusCode)
+	}
+
+	// Decode the response.
+	var tasks []Task
+	err = json.NewDecoder(resp.Body).Decode(&tasks)
+	if err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+}
+
+func TestCreateTaskCommentsHandler(t *testing.T) {
+	// Define the task comment to be created
+	taskCommentData := `{
+        "task_id": 1, 
+        "comment": "This is a test comment for task"
+    }`
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:4000/comments", bytes.NewBufferString(taskCommentData))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for status code 201 Created
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected status 201, got %v", resp.StatusCode)
+	}
+
+	// Decode the response to verify the comment was properly created
+	var comment TaskComment
+	err = json.NewDecoder(resp.Body).Decode(&comment)
+	if err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	// Check if the returned comment matches the one we've created
+	if comment.TaskID != 1 {
+		t.Errorf("Expected TaskID 1, got %d", comment.TaskID)
+	}
+	if comment.Comment != "This is a test comment for task" {
+		t.Errorf("Expected comment 'This is a test comment for task', got '%s'", comment.Comment)
+	}
+}
+
+func TestGetTaskHandler(t *testing.T) {
+	// First, let's test with a valid task ID that exists in the database.
+	taskID := 1 // You might want to change this to an actual valid ID in your database.
+	resp, err := http.Get(fmt.Sprintf("http://localhost:4000/tasks/%d", taskID))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for status code 200 OK
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status 200, got %v", resp.StatusCode)
+	}
+
+	// Decode the response to verify the task
+	var task Task
+	err = json.NewDecoder(resp.Body).Decode(&task)
+	if err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	// Check if the returned task matches the ID we've requested
+	if task.ID != taskID {
+		t.Errorf("Expected task ID %d, got %d", taskID, task.ID)
+	}
+
+	// Now, test with an invalid task ID.
+	resp, err = http.Get("http://localhost:4000/tasks/invalidID")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Expected status 400, got %v", resp.StatusCode)
+	}
+
+	// Finally, test with a non-existing task ID.
+	taskID = 99999 // Assuming this ID doesn't exist.
+	resp, err = http.Get(fmt.Sprintf("http://localhost:4000/tasks/%d", taskID))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("Expected status 404, got %v", resp.StatusCode)
+	}
+}
+
+func TestUpdateTaskHandler(t *testing.T) {
+	// URL for the task with ID 1
+	url := "http://localhost:4000/tasks/1"
+
+	// Define the updated task data.
+	updateData := `{
+        "title": "Updated Task",
+        "description": "This is an updated task description",
+        "completed": true,
+        "items": [
+			"Updated Item 1",
+			"Updated Item 2"
+        ]
+    }`
+
+	// Making the PUT request to update the task with ID 1
+	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(updateData))
+	if err != nil {
+		t.Fatalf("Failed to create PUT request: %v", err)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Failed to make PUT request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check the status code.
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status %d; got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	// Decode the response body to check if the task was updated correctly.
+	var updatedTask Task
+	err = json.NewDecoder(resp.Body).Decode(&updatedTask)
+	if err != nil {
+		t.Fatalf("Error decoding response body: %v", err)
+	}
+
+	// Validate the updated task data.
+	if updatedTask.Title != "Updated Task" {
+		t.Errorf("Expected title to be 'Updated Task'; got '%s'", updatedTask.Title)
+	}
+}
+
+func TestDeleteTaskHandler(t *testing.T) {
+	// Step 1: Create a temporary task
+
+	// Define the task to be created
+	taskData := `{
+        "title": "Temp Task",
+        "description": "This is a temporary task for testing deletion",
+        "items": [
+			"Temp Item 1",
+			"Temp Item 2"
+        ]
+    }`
+
+	// Create a new HTTP request with the task data
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:4000/tasks", bytes.NewBufferString(taskData))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Perform the HTTP request to create the task
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the status code is 201 Created
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected status code 201 for task creation; got %d", resp.StatusCode)
+	}
+
+	// Decode the response body to get the task details
+	var taskResponse Task
+	err = json.NewDecoder(resp.Body).Decode(&taskResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Step 2: Delete the temporary task
+
+	// Create a new HTTP request for deletion
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:4000/tasks/%d", taskResponse.ID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Perform the HTTP request to delete the task
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the status code is 200 OK after deletion
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status code 200 for task deletion; got %d", resp.StatusCode)
+	}
+
+	// Step 3: Verify that the task has been deleted
+
+	// Try to fetch the deleted task
+	resp, err = http.Get(fmt.Sprintf("http://localhost:4000/tasks/%d", taskResponse.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Verify that the status code is 404 Not Found for the deleted task
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("Expected status code 404 for the deleted task; got %d", resp.StatusCode)
 	}
 }

@@ -244,7 +244,9 @@ func (taskDto TaskDto) GetTask(id int) (*Task, error) {
 	task := &Task{}
 	task.Items = make([]string, 0)
 
+	hasRows := false
 	for rows.Next() {
+		hasRows = true
 		var taskItem sql.NullString
 		err := rows.Scan(
 			&task.ID,
@@ -267,6 +269,10 @@ func (taskDto TaskDto) GetTask(id int) (*Task, error) {
 
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+
+	if !hasRows {
+		return nil, sql.ErrNoRows
 	}
 
 	return task, nil
