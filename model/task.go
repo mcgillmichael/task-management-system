@@ -90,8 +90,8 @@ func (taskDto TaskDto) GetAllTasks() ([]Task, error) {
 func (taskDto TaskDto) Insert(task *Task) error {
 
 	stmt, err := taskDto.DB.Prepare(`
-			INSERT INTO task (title, description, completed, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5)
+			INSERT INTO task (title, description, completed, created_at, updated_at, assigned_user_id)
+			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id
 `)
 	if err != nil {
@@ -100,7 +100,7 @@ func (taskDto TaskDto) Insert(task *Task) error {
 	defer stmt.Close()
 
 	var taskID int
-	err = stmt.QueryRow(task.Title, task.Description, task.Completed, task.CreatedAt, task.UpdatedAt).Scan(&taskID)
+	err = stmt.QueryRow(task.Title, task.Description, task.Completed, task.CreatedAt, task.UpdatedAt, task.AssignedUserID).Scan(&taskID)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (taskDto TaskDto) UpdateTask(id int, task *Task) error {
 func (taskDto TaskDto) AssignUserToTask(id, userID int, updatedAt time.Time) error {
 	stmt, err := taskDto.DB.Prepare(`
 		UPDATE task
-		SET assigned_to = $1, updated_at = $2
+		SET assigned_user_id = $1, updated_at = $2
 		WHERE id = $3
 	`)
 	if err != nil {

@@ -130,6 +130,7 @@ func (app *application) createTaskHandler2(w http.ResponseWriter, r *http.Reques
 
 	createTask.CreatedAt = time.Now()
 	createTask.UpdatedAt = time.Now()
+	createTask.AssignedUserID = 0
 
 	taskDto := model.TaskDto{DB: app.db}
 
@@ -174,7 +175,7 @@ func (app *application) getAllTasksHandler(w http.ResponseWriter, r *http.Reques
 	// Fetch all tasks from the database.
 	tasks, err := taskDto.GetAllTasks()
 	if err != nil {
-		http.Error(w, "Error fetching tasks", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error fetching tasks: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -208,6 +209,7 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 	// Delete the task from the database.
 	err = taskDto.DeleteTask(taskID)
 	if err != nil {
+		app.logger.Printf("Failed to delete task with ID %d: %v", taskID, err) // Log the error for more insight
 		http.Error(w, "Error deleting task", http.StatusInternalServerError)
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -593,4 +594,245 @@ func TestDeleteTaskHandler(t *testing.T) {
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("Expected status code 404 for the deleted task; got %d", resp.StatusCode)
 	}
+}
+
+func TestAssignTaskHandler(t *testing.T) {
+	// Step 1: Create a temporary task
+	taskData := `{
+        "title": "Temp Task for Assignment",
+        "description": "This is a temporary task for testing assignment",
+        "items": ["Temp Item 1", "Temp Item 2"]
+    }`
+
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:4000/tasks", bytes.NewBufferString(taskData))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Error during task creation: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Expected 201 for task creation; got %d", resp.StatusCode)
+	}
+
+	var taskResponse Task
+	if err := json.NewDecoder(resp.Body).Decode(&taskResponse); err != nil {
+		t.Fatalf("Error decoding task creation response: %v", err)
+	}
+
+	// Step 2: Assign the user to the task
+	const userID = 1
+	req, _ = http.NewRequest(http.MethodPatch, fmt.Sprintf("http://localhost:4000/tasks/%d/assign/%d", taskResponse.ID, userID), nil)
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Error during task assignment: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		responseBody, _ := ioutil.ReadAll(resp.Body)
+		t.Fatalf("Expected 200 for task assignment; got %d. Response: %s", resp.StatusCode, responseBody)
+	}
+
+	var assignedTaskResponse Task
+	if err := json.NewDecoder(resp.Body).Decode(&assignedTaskResponse); err != nil {
+		t.Fatalf("Error decoding task assignment response: %v", err)
+	}
+
+	if assignedTaskResponse.AssignedUserID != userID {
+		t.Fatalf("Expected assigned user ID %d; got %d", userID, assignedTaskResponse.AssignedUserID)
+	}
+
+	// Cleanup: Delete the test task after the test
+	req, _ = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:4000/tasks/%d", taskResponse.ID), nil)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Error during task deletion post-test: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Expected 200 for task deletion post-test; got %d", resp.StatusCode)
+	}
+}
+
+func TestGetTasksAssignedToUserHandler(t *testing.T) {
+	// Use a random user ID for testing since there's no user creation API.
+	const userID = 1
+
+	// Step 1: Create a temporary task
+	taskData := `{
+		"title": "Temp Task for Assignment",
+		"description": "This is a temporary task for testing assignment",
+		"items": ["Temp Item 1", "Temp Item 2"]
+	}`
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:4000/tasks", bytes.NewBufferString(taskData))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Error during task creation request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var taskResponse Task
+	err = json.NewDecoder(resp.Body).Decode(&taskResponse)
+	if err != nil {
+		t.Fatalf("Error decoding task creation response: %v", err)
+	}
+
+	// Step 2: Assign this task to the user
+	req, err = http.NewRequest(http.MethodPatch, fmt.Sprintf("http://localhost:4000/tasks/%d/assign/%d", taskResponse.ID, userID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Step 3: Use the getTasksAssignedToUserHandler to fetch tasks for the user
+	req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:4000/users/%d/tasks/assigned", userID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var tasksResponse []Task
+	err = json.NewDecoder(resp.Body).Decode(&tasksResponse)
+	if err != nil {
+		t.Fatalf("Error decoding tasks response: %v", err)
+	}
+
+	// Step 4: Validate the tasks retrieved
+	found := false
+	for _, task := range tasksResponse {
+		if task.ID == taskResponse.ID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Fatalf("Expected to retrieve task with ID %d, but it was not found in the response", taskResponse.ID)
+	}
+
+	// Step 5: Cleanup - Delete the temporary task
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:4000/tasks/%d", taskResponse.ID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+}
+
+func TestGetAllTaskCommentsHandler(t *testing.T) {
+	// Step 1: Create a temporary task
+	taskData := `{
+		"title": "Temp Task for Comment Testing",
+		"description": "This is a temporary task for testing comments retrieval",
+		"items": ["Temp Item 1", "Temp Item 2"]
+	}`
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:4000/tasks", bytes.NewBufferString(taskData))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Error during task creation request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var taskResponse Task
+	err = json.NewDecoder(resp.Body).Decode(&taskResponse)
+	if err != nil {
+		t.Fatalf("Error decoding task creation response: %v", err)
+	}
+
+	// Step 2: Add comments to the task
+	comments := []string{"Comment 1", "Comment 2"}
+	for _, commentText := range comments {
+		commentData := fmt.Sprintf(`{"task_id": %d, "comment": "%s"}`, taskResponse.ID, commentText)
+		req, err = http.NewRequest(http.MethodPost, "http://localhost:4000/comments", bytes.NewBufferString(commentData))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Error adding comment: %v", err)
+		}
+		defer resp.Body.Close()
+	}
+
+	// Step 3: Use the getAllTaskCommentsHandler to fetch comments for the task
+	req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:4000/comments/%d", taskResponse.ID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var commentsResponse []TaskComment
+	err = json.NewDecoder(resp.Body).Decode(&commentsResponse)
+	if err != nil {
+		t.Fatalf("Error decoding comments response: %v", err)
+	}
+
+	// Step 4: Validate the comments retrieved
+	if len(commentsResponse) != len(comments) {
+		t.Fatalf("Expected %d comments, got %d", len(comments), len(commentsResponse))
+	}
+
+	for _, commentText := range comments {
+		found := false
+		for _, comment := range commentsResponse {
+			if comment.Comment == commentText {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Fatalf("Expected to retrieve comment '%s', but it was not found in the response", commentText)
+		}
+	}
+
+	// Step 5: Cleanup - Delete the temporary task
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:4000/tasks/%d", taskResponse.ID), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
 }
